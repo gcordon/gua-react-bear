@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./tree.css">
+</head>
+
+<body>
+    <div>
+        <h1>markdown</h1>
+        <h1 contenteditable># test4</h1>
+        <div contenteditable>#test1/test2/test3/test4#123</div>
+        <!-- #test2$122 
+        # h1标题
+        - **abc** 123 -->
+    </div>
+    <ul id="id-tree">
+        <!-- 写死的 -->
+        <li>
+            <div class="tag__parent " style="--left-size: 0;" data-tag-value="['父标签1']">
+                <div class="tag__parent__embellish">
+                    <span class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                    <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                </div>
+                <span class="tag__parent__name" data-tag-type="tagName">父标签</span>
+            </div>
+            <ul class="tag__children tag__children--default">
+                <li>
+                    <div class="tag__parent " style="--left-size: 100px;" data-tag-value="['父标签1','父标签2',]">
+                        <div class="tag__parent__embellish">
+                            <span class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                            <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                        </div>
+                        <span class="tag__parent__name" data-tag-type="tagName">父标签1/父标签2</span>
+                    </div>
+                    <ul class="tag__children tag__children--default">
+                        <li>
+                            <div class="tag__parent "  style="--left-size: 200px;" data-tag-value="['父标签1','父标签2','父标签3',]">
+                                <div class="tag__parent__embellish">
+                                    <span hidden class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                                    <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                                </div>
+                                <span class="tag__parent__name" data-tag-type="tagName">父标签1/父标签2父标签3</span>
+                            </div>
+                            <ul class="tag__children tag__children--default">
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <!-- js 生成插入 -->
+    </ul>
+
+</body>
+<script src="./tree.js"></script>
+<script>
+    let template = (tagValue, leftSize, htmlChild, hidden = false, ) => `
+        <li>
+            <div class="tag__parent " style="--left-size: ${leftSize}px;" data-tag-value='${JSON.stringify(tagValue)}'>
+                <div class="tag__parent__embellish">
+                    <span ${hidden && 'hidden' } class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                    <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                </div>
+                <span class="tag__parent__name" data-tag-type="tagName">${tagValue.join('/')}</span>
+            </div>
+            ${
+                htmlChild 
+                ?
+                    `
+                        <ul class="tag__children tag__children--default">
+                            ${htmlChild}
+                        </ul>
+                    `
+                : 
+                    ''
+            }
+        </li>
+    `
+
+    let t3 = template(['lin1',' lin2',' lin3',], 200, null, true)
+    let t2 = template(['lin1',' lin2'], 100, t3, )
+    let t1 = template(['lin1'], 0, t2, )
+    console.log(`log 调试数据: t1`, t1);
+    document.querySelector('#id-tree').insertAdjacentHTML('beforeend', t1)
+    treeToggle(function(value){
+        console.log('点击的标签是', value);
+    })
+</script>
+
+</html>

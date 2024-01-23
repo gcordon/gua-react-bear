@@ -5,7 +5,12 @@ import WellToken from './WellToken'
 import StringToken from './StringToken'
 
 import './App.css'
+import './treeHtml/tree.css'
 import { createAndAppendDom } from './domUtils'
+import { treeToggle } from './treeHtml/tree'
+
+import { useLoadingHook, } from './hooks/mainHooks'
+
 
 // onInput(event: 用在这里) 
 type DOMEventType = {
@@ -105,28 +110,6 @@ const sleepTool = (time: number, status: sleepSatus,): sleepReturn => {
     })
 }
 
-// 加载组件 https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks
-const useLoading = () => {
-    const [loadingStatus, setLoading] = useState(false)
-    const loadingFetch = (fetchResult: Promise<any>) => {
-        // 加载速度马上为loaidng状态
-        setLoading(true)
-
-        // 这里等待promise的返回，无论成功或失败，都让 loading 取消
-        fetchResult.finally(() => {
-            setLoading(false)
-        })
-    }
-
-    // as const 的意思，是表示 ** as const， ** 的内容变成 const loadingStatus = ?? vey，
-    // 对外之后，就无法改成这个值
-    /**
-        const arr = [1, 2] as const
-        arr[0] = 3  // 会提示  无法为“0”赋值，因为它是只读属性。
-     */
-    return [loadingStatus, loadingFetch,] as const
-}
-
 
 
 const App = () => {
@@ -162,6 +145,7 @@ const App = () => {
             id: 1,
             title: '默认title-1',
             content: '默认content-1',
+            // 生成的内容标签
             tags: [
                 ['lin_1','lin_11','lin_111',],
                 ['lin___1','lin___11','lin___111',],
@@ -174,6 +158,7 @@ const App = () => {
             id: 2,
             title: '默认title-2',
             content: '默认content-2',
+            // 生成的内容标签
             tags: [
                 ['lin_1','lin_11','lin_111','lin_1111',],
                 ['lin___1','lin___11','lin___111','lin___1111',],
@@ -183,8 +168,16 @@ const App = () => {
         {
             ...DefaultIList,
             id: 3,
-            title: '默认title-2',
-            content: ' #gua1/gua2# #gua1# #gua2#  #gua2/gua3# #gua2/gua3/gua4# ',
+            title: '默认title-3',
+            // content: ' #gua1/gua2# #gua1# #gua2#  #gua2/gua3# #gua2/gua3/gua4# ',
+            // content: ' #gua1/gua2/gua3# ',
+            content: ' #gua1/gua2/gua3/gua4# ',
+        },
+        {
+            ...DefaultIList,
+            id: 4,
+            title: '默认title-4',
+            content: ' #tt1# ',
         },
     ]
     // 默认编辑中的
@@ -196,8 +189,11 @@ const App = () => {
     // DOM 
     const searchButtonRef = useRef<HTMLButtonElement>(null)
     // 加载
-    const [loadingStatus, loadingFetch, ] = useLoading()
+    const [loadingStatus, loadingFetch, ] = useLoadingHook()
 
+    /**
+     * 自动化操作
+     */
     // 自动点击搜索按钮
     const testAutoClickSearch = () => {
         let b  = searchButtonRef.current
@@ -222,7 +218,7 @@ const App = () => {
         }
     }
 
-    // 转成为字符串json
+    // 转成为字符串对象
     const toString = <T,>(value: T): string => {
         return JSON.stringify(value)
     }
@@ -376,13 +372,13 @@ const App = () => {
     }
 
     // 修改单个标题
-    const onSetTitle = (event: DOMEventType['input'],): void => {
+    const onSetTitle = (event: DOMEventType['input'], changeKey: 'title' | 'content',): void => {
         if (editor === null) {
             toast.error(`无编辑中的`)
             return
         }
         
-        let newTitle = event.target.value
+        let newValue = event.target.value
 
         let id = editor.id
         let {isfined, findIndex,} = findList(id)
@@ -390,7 +386,7 @@ const App = () => {
             return
         }
         let l = cloneList()
-        l[findIndex].title = newTitle
+        l[findIndex][changeKey] = newValue
         // 保存 当前编辑中的
         setEditor(l[findIndex])
         // 重新调整list
@@ -399,106 +395,95 @@ const App = () => {
 
     // 监听列表 增 删 改 查 的状态
     useEffect(() => {
+        renderListTags()
+
         console.log('list变化了：', list)
         return () => {}
     }, [list,])
-
-
-    // 树点击展开和缩放
-    const toggleTree = () => {
-        var toggler = document.getElementsByClassName("caret")
-        var i
-        for (i = 0; i < toggler.length; i++) {
-            toggler[i].addEventListener("click", function (this: any, ...args: any[]) {
-                console.log('this===',this)
-                this.parentElement.querySelector(".nested").classList.toggle("active")
-                this.classList.toggle("caret-down")
-            })
-        }
-    }
-
 
     // 创建侧边栏 dom
     // 接受的参数格式是 {a: b: { c: {}, }, }
     const createTreeDom = (tree: object,) => {
         // 递归生成 dom 
-        const loopCreateDomElement = (parentObject: object | any, parentName: string,): string => {
+        const loopCreateDomElement = (parentObject: object | any, parentName: string, index: number, historicalNames: Array<string>, ): string => {
+            historicalNames.push(parentName)
+            // 生成最终 节点
+            const createAllDomElemn = (html: string) => {
+                // 最终的节点
+                let allHtml = `
+                    <li>
+                        ${html}
+                    </li>
+                ` 
+                return allHtml
+            }
+            // 生成 父节点
+            interface icp {
+                notChildren: boolean,
+            }
+            const createParentDomElement = (o: icp,) => {
+                // 距离左边的间距
+                const style = `--left-size: ${index * 100}px;`
+                const isHidden = o.notChildren ? 'hidden' : ''
+                return `
+                    <div class="tag__parent " style="${style}" data-tag-value=${JSON.stringify(historicalNames)}>
+                        <div class="tag__parent__embellish">
+                            <span ${isHidden} class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                            <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                        </div>
+                        <span class="tag__parent__name" data-tag-type="tagName">${parentName}</span>
+                    </div>
+                `
+            }
+
             let childrenObject = parentObject[parentName]
             let childrenKeys = Object.keys(childrenObject)
 
             // 如果没有子节点了，只返回  父节点 了，并且类名不是下拉的形式
             if (childrenKeys.length === 0) {
-                return `
-                    <li>
-                        <span class="到底了">${parentName}</span>
-                    </li>
-                `
+                return createAllDomElemn(`
+                    ${createParentDomElement({notChildren:true,})}
+                `)
             }
 
             // 生成 子节点
-            let childrenTemplate = ``
-            for (const key of childrenKeys) {
-                childrenTemplate += `
-                    ${loopCreateDomElement(childrenObject, key)}
-                `
-            }
             let createChildrenDomElement = () => {
-                let html = ``
-                if (childrenTemplate.length) {
-                    html = `
-                        <ul class="nested">
-                            ${childrenTemplate}
-                        </ul>
+                index++
+                let childrenTemplate = ``
+                for (const key of childrenKeys) {
+                    childrenTemplate += `
+                        ${loopCreateDomElement(childrenObject, key, index, historicalNames,)}
                     `
                 }
+                // 
+                let html = `
+                    <ul class="tag__children tag__children--default">
+                        ${childrenTemplate}
+                    </ul>
+                `
                 return html
             }
 
-            // 生成 父节点
-            let createParentDomElement = () => {
-                return `
-                    <span class="caret">${parentName}</span>
-                `
-            }
+            let allHtml = createAllDomElemn(`
+                ${createParentDomElement({notChildren:false,})}
+                ${createChildrenDomElement()}
+            `)
 
-            // 最终的节点
-            let allHtml = `
-                <li>
-                    ${createParentDomElement() }
-                    ${createChildrenDomElement() }
-                </li>
-            `
-
-            // 生成的html dom如下
-            /**
-                <li>
-                    <span class="caret">Beverages1</span>
-                    <ul class="nested">
-                        <li>Water</li>
-                        <li>Coffee</li>
-                        <li>
-                            <span class="caret">Tea</span>
-                            <ul class="nested">
-                                继续当前的html
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
-
-                <li>
-                    <span class="caret">只有一级</span>
-                </li>
-             */
+            // 生成的html dom -》 参考 tree/tree.html文件
             return allHtml
         }
-
         // 生成侧边栏
-        let treeHtml = `<ul id="myUL">`
+        let rooHtml = ``
+        let rootChildrenHtml = ``
         for (const iterator of Object.keys(tree)) {
-            treeHtml += loopCreateDomElement(tree, iterator)
+            rootChildrenHtml += loopCreateDomElement(tree, iterator, 0, [])
         }
-        treeHtml += '</ul>'
-        return treeHtml
+        rooHtml = `
+            <ul id="id-tree">
+                ${rootChildrenHtml}
+            </ul>
+        `
+        return rooHtml
     }
 
 
@@ -528,26 +513,6 @@ const App = () => {
         appendKey(loopTree, keys)
     }
 
-    // 字符串tag转换成数组tag
-    const stringTagToArrayTag = (stringTag: string, ): string[] | never => {
-        // 固定格式为： '#test1/test2#'
-        let s1 = stringTag
-        let startIs井号 = s1.startsWith('#')
-        let endIs井号 = s1.endsWith('#')
-        let s2 = s1.slice(1, -1).split('/') // 剔除 前后的 #号 , 再以 斜杆 分割
-        if (!startIs井号) {
-            throw new Error('stringTagToArrayTag errror 1')
-        }
-        if (!endIs井号) {
-            throw new Error('stringTagToArrayTag errror 2')
-        }
-        console.log("🚀 ~ setTimeout ~ s1:", s2, startIs井号, endIs井号)
-        // 将数组中的值，都变为字符串
-        s2.map(element => element = element.toString())
-        return s2
-    }
-
-
     const tag字符串切割 = (tokens: string,): string[] => {
         // #test1/test2# jifjdisf
         // #test1# 123
@@ -559,7 +524,7 @@ const App = () => {
         let token = StringToken.new(tokens)
         let well = WellToken.new()
         while(token.hasLoopToken()) {
-            let v = token.getToken()
+            let value = token.getToken()
             // 如果 值是 井号 塞入 井号下标数组
             // 如果 井号下标数组长度存在
                 // 如果是单数，说明正在开始
@@ -580,10 +545,10 @@ const App = () => {
             // wellIndex 长度 大于 1
             // 是#号，并且上一个字符不是空格，为第二个 标签 wellIndexs
             // 切割 wellIndex[0] 到 wellIndex[1] 之间的内容, push 到 wellTags 中 
-            if (well.isWellFh(v)) {
+            if (well.isWellFh(value)) {
                 if (well.is双数Well()) {
                     // ’ #a‘ 当前查询到#号，前一个字符必须空格，第二字符是#号，第三个字符不能是空格
-                    let current = well.isWellFh(v)
+                    let current = well.isWellFh(value)
                     let next = token.peekNextToken()
                     let nextIsEmpty = well.isEmpty(next)
                     let pre = token.peekPreToken()
@@ -596,7 +561,7 @@ const App = () => {
                     }
                 } else if (well.is单数Well()) {
                     // // ’a# ‘ 当前查询到#号，前一个字符必须不空格，第二字符是#号，第三个字符必须是空格
-                    let current = well.isWellFh(v)
+                    let current = well.isWellFh(value)
                     let next = token.peekNextToken()
                     let nextIsEmpty = well.isEmpty(next)
                     let pre = token.peekPreToken()
@@ -651,24 +616,30 @@ const App = () => {
         }
         console.log("🚀 ~ setTimeout ~ tagTree:", tagTree)
         let html = createTreeDom(tagTree)
+        // console.log("🚀 ~ App ~ html:", html)
         createAndAppendDom('id-标签树', html)
     }
 
     
     // 渲染列表的tags标签
     const renderListTags = () => {
-        const filter = defaultList.filter(v => !v.test)
+        // let arr = cloneList()
+        let arr = list
+        const filter = arr.filter(v => !v.test)
         filter.map(e => {
             e.tags = 根据内容生成标签二维数组(e.content)
             return e
         })
         console.log("🚀 ~ renderListTags ~ filter:", filter)
+        let allTags = []
         for (const o of filter) {
-            传入二维数组生成树对象(o.tags)
+            allTags.push(...o.tags)
         }
+        传入二维数组生成树对象(allTags)
+        console.log("🚀 ~ renderListTags ~ allTags:", allTags)
 
         // 测试数据
-        // const allTags = defaultList.filter(v => v.test).map(e => e.tags)
+        // const allTags = arr.filter(v => v.test).map(e => e.tags)
         // const tree = {}
         // for (const t of allTags) {
         //     for (const e of t) {
@@ -678,16 +649,15 @@ const App = () => {
         // createTreeDom(tree)
     }
     
-    setTimeout(() => {
-        // __testModel()
-        renderListTags()
-        toggleTree()
-    }, 0);
-
 
     useEffect(()=>{
         // 测试，自动点击搜索按钮
         // testAutoClickSearch()
+        // __testModel()
+        renderListTags()
+        treeToggle((value: string,)=>{
+            console.log('点击的标签是', value);
+        })
     }, [])
 
     const listTypeFilter = (title: string, filedList: Array<IList>, ): JSX.Element => {
@@ -702,11 +672,12 @@ const App = () => {
                     let hasEditor = editor?.id === id
                     return (
                         <div key={id}>
-                            <div>
-                                标题: {item.title}
+                            <div style={{ border: '1px solid black' }}>
                                 <ButtonWidget onClick={() => { setEditor(item,) }}>编辑</ButtonWidget>
                                 <ButtonWidget onClick={() => { onDelete(id,) }}>池底删除</ButtonWidget>
                                 <ButtonWidget onClick={() => { onToRecycleBin(id,) }}>放到回收站</ButtonWidget>
+                                😄标题: {item.title} 😄
+                                内容: {item.content}
                                 {hasEditor && '当时是编辑中的~'}
                             </div>
                         </div>
@@ -769,7 +740,13 @@ const App = () => {
                             // ! 是操作符。它告诉编译器属性已设置（不是 null 或 undefined ），即使TypeScript的分析无法检测到。
                             value={editor!.title} // 这里的 ! 符号表示 肯定不会是 null 因为有函数提前判断了，但是ts不知道， 所以我们只能用特殊语法让ts知道
                             onChange={(event: DOMEventType['input']) => {
-                                onSetTitle(event,)
+                                onSetTitle(event, 'title')
+                            }}  
+                        />
+                        <input 
+                            value={editor!.content || ''}
+                            onChange={(event: DOMEventType['input']) => {
+                                onSetTitle(event, 'content')
                             }}  
                         />
                     </>

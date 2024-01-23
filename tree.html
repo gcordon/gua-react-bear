@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./tree.css">
+</head>
+
+<body>
+    <div>
+        <h1>markdown</h1>
+        <h1 contenteditable># test4</h1>
+        <div contenteditable>#test1/test2/test3/test4#123</div>
+        <!-- #test2$122 
+        # h1标题
+        - **abc** 123 -->
+    </div>
+
+
+    <ul id="id-tree">
+        <!--  -->
+        <li>
+            <div class="tag__parent tag__parent--active" data-tag-value="父标签1">
+                <div class="tag__parent__embellish">
+                    <span class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                    <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                </div>
+                <span class="tag__parent__name" data-tag-type="tagName">父标签</span>
+            </div>
+            <ul class="tag__children tag__children--default">
+                <li>
+                    <div class="tag__parent " data-tag-value="父标签1">
+                        <div class="tag__parent__embellish">
+                            <span class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                            <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                        </div>
+                        <span class="tag__parent__name" data-tag-type="tagName">父标签</span>
+                    </div>
+                    <ul class="tag__children tag__children--default">
+                        <li>
+                            <div class="tag__parent " data-tag-value="父标签1">
+                                <div class="tag__parent__embellish">
+                                    <span class="tag__parent__arrow" data-tag-type="tagArrow"></span>
+                                    <span class="tag__parent__code" data-tag-type="tagCode">#</span>
+                                </div>
+                                <span class="tag__parent__name" data-tag-type="tagName">父标签</span>
+                            </div>
+                            <ul class="tag__children tag__children--default">
+                                
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+    </ul>
+
+</body>
+<script> 
+    const tagParents = document.querySelectorAll(".tag__parent")
+    const clearAllParentActive = () => {
+        tagParents.forEach(value => {
+            value.classList.remove('tag__parent--active')
+        })
+    }
+    tagParents.forEach(element => {
+        let 向下捕获 = true
+        // 注意这里不能用箭头函数作为回调，如果是箭头函数的话，指向的就是 Foreach 中的东西的，
+        // 否则，this获取的就是window
+        element.addEventListener ("click", function(currentClickElement) {
+            // 注意，这里的    this 和 回调的 currentClickElement 的值是不同的东西
+            //               this是点击中，currentClickElement是捕获到的
+            let target = currentClickElement.target
+            let { tagType } = target.dataset
+
+            // 让其他的所有 父标签 高亮取消
+            clearAllParentActive()
+            // 给当前点击的元素 增加高亮
+            this.classList.add('tag__parent--active')
+
+            // 当前 this 下获到的 不同的元素点击
+            let clickArrow = tagType === 'tagArrow'
+            let clickName = tagType === 'tagName'
+            // 如果点击的是箭头，让箭头旋转，并且让子标签展开
+            if (clickArrow) {
+                // 旋转箭头
+                target.classList.toggle('tag__parent__arrow--active')
+                // 子标签展开
+                let childrenTag = this.nextElementSibling
+                childrenTag.classList.toggle("tag__children--active")
+            }
+            if (clickName) {
+                // TODO
+                // 获取当前点击的标签标识
+                console.log(`log 调试数据: tagValue`, this.dataset.tagValue)
+            }
+        }, 向下捕获)
+    })
+</script>
+
+</html>

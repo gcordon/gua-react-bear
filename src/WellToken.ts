@@ -36,21 +36,23 @@ class WellToken {
         }
         return value.includes(' ')
     }
-    // 获取标签数组值
-    getWeellTag(): string[] {
-        return this.wellTags
-    }
-    // 是否有井号标识存在
-    hasWell(): boolean {
-        return this.wellIndexs.length > 0
-    }
     // 单数 1 3 5 ...
     is单数Well(): boolean {
         return this.wellIndexs.length % 2 === 1
     }
-    // 双数 2 4 6 ...
+    // 双数 0 2 4 6 ...
     is双数Well(): boolean {
         return this.wellIndexs.length % 2 === 0
+    }
+
+    // 下面是暂时没用到的
+    // 是否有井号标识存在
+    hasWell(): boolean {
+        return this.wellIndexs.length > 0
+    }
+    // 获取标签数组值
+    getWeellTag(): string[] {
+        return this.wellTags
     }
     // 是否存在一组 tag 了
     isOneTag() {

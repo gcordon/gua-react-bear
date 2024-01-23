@@ -1,0 +1,94 @@
+
+html {
+  --line-整体-bg-color: #2f3235;
+
+  /* 后面俩个是为了 debug（捕获点击的过程） 才加的颜色，如果不需要 debug 可以去除掉 */
+  --line-整体内的箭头-bg-color: #575d62;
+  --line-整体内的文字-bg-color: #975d62;
+
+  --line-整体内的箭头的箭头符号-bg-color: red;
+  --line-整体内的箭头的井号符号-bg-color: orange;
+}
+[contenteditable] {
+    outline: 0px solid transparent;
+}
+ul,li {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+#id-tree {
+    background-color: #2f3235;
+    box-sizing: border-box;
+    padding: 20px 10px;
+    color: #fff;
+    cursor: default; /* 箭头展示 */ 
+    min-width: 600px;
+}
+
+
+/* 父标签相关 */
+.tag__parent {
+    display: flex;
+    background-color: var(--line-整体-bg-color);
+    border-radius: 4px;
+    padding: 4px 0;
+    padding-left: var(--left-size);
+}
+.tag__parent--active {
+    background-color: #db4d52;
+}
+.tag__parent--active .tag__parent__code {
+    color: #fff;
+}
+/* 左侧修饰 */
+.tag__parent__embellish {
+    /* 左边占据 100px */
+    flex-basis: 100px;
+    min-width: 100px;
+    text-align: center;
+    background-color: var(--line-整体内的箭头-bg-color);
+    display: flex;
+    padding: 0 10px;
+}
+.tag__parent__arrow[hidden] {
+    display: none;
+}
+.tag__parent__arrow {
+    display: inline-block;
+    width: 30px;
+    background-color: var(--line-整体内的箭头的箭头符号-bg-color);
+    flex: 1;
+}
+.tag__parent__arrow::before {
+    content: "\25B6";
+    display: inline-block;
+    margin-right: 6px;
+}
+.tag__parent__arrow--active::before {
+    transform: rotate(90deg);
+}
+.tag__parent__code {
+    color: #656c6f;
+    background-color: var(--line-整体内的箭头的井号符号-bg-color);
+    flex: 1;
+}
+.tag__parent__name {
+    /* 右边占据 100% - 100px */
+    flex: 1;
+    /* background-color: green; */
+    background-color: var(--line-整体内的文字-bg-color);
+}
+
+
+/* 子标签相关 */
+.tag__children {
+    /* padding-left: 90px; */
+}
+.tag__children--default {
+    display: none;
+}
+.tag__children--active {
+    display: block;
+}
+
