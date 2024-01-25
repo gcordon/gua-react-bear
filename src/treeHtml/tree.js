@@ -1,4 +1,147 @@
-// 2 个数组 比较是否相等
+
+// 1 记录下拉切换 2 激活元素
+class ToggleActiveHostory {
+    
+}
+// 二维数组存储的格式是 [[targetValue, domElement,],]
+// 点击箭头 “开启” 的历史 target
+var openDomTargetHistorys = [
+    ['["gua1"]', null,],
+    ['["gua1","gua2"]', null,],
+    ['["gua1","gua2","gua3"]', null,],
+    ['["lin1"]', null,],
+]
+// 点击箭头 “关闭” 的历史DOM
+var closeDomTargetHistorys = [
+    // ['["gua1"]', null,],
+    // ['["gua1","gua2"]', null,],
+    // ['["gua1","gua2","gua3"]', null,],
+]
+// 当前激活的下拉DOM
+// 数组长度只可能 =0 或 =1
+var activeDomTargetHistoryValue = [
+    [openDomTargetHistorys[0][0], null,],
+]
+
+var resetTargetList = () => {
+    openDomTargetHistorys = []
+    closeDomTargetHistorys = []
+    activeDomTargetHistoryValue = []
+}
+var debugModel = 1
+if (debugModel === 0) {
+    resetTargetList()
+}
+/**
+ * 
+ * @param {*} changeTargetValue2Arr 保存的是 [[targetValue标识, dom元素(只是为了debug容易查看)目前情况下不需要用到,]]
+ * @param {*} changeType           add 增加 |  remove 移除
+ */
+var changeDomHistoryList = (changeTargetValue2Arr, changeType,) => {
+    return new Promise((resolve, reject) => {
+        for (var arr of changeTargetValue2Arr) {
+            var targetValue = arr[0]
+            let el = document.querySelector(`.tag__parent[data-tag-value='${targetValue}']`)
+            // let el = document.querySelector(`[data-tag-value='${targetValue}']`)
+            if (!el) {
+                console.error('展示元素 —— 查询不到元素 err', el, arr, changeTargetValue2Arr, )
+                continue //跳过当前迭代的剩余代码，直接进入下一次迭代。
+            }
+            // console.log("🚀 ~ el:", el)
+                el
+                .nextElementSibling // // [子下拉dom ul] 相邻的下一个兄弟dom ul
+                .classList[changeType]('tag__children--active')
+        }
+        resolve({})
+    })
+}
+/**
+ * 内容激活的时候
+ * @param {*} targetValue 
+ */
+var changeDomTargetActive = (targetValue,) => {
+    // 移除所有激活的
+    let allEl = document.querySelectorAll('.tag__parent')
+    for (const el of allEl) {
+        el.classList.remove('tag__parent--active')
+    }
+    if (targetValue.length) {
+        // 高亮选中的激活
+        let el = document.querySelector(`[data-tag-value='${targetValue[0][0]}`)
+        if (el === null) {
+            return
+        }
+        el.classList.add('tag__parent--active')
+    }
+}
+const changeTypes = {
+    '添加类名': 'add',
+    '移除类名': 'remove',
+}
+var execClassToggle = async () => {
+    // 注意执行顺序   先执行 add 再执行 remove
+    await changeDomHistoryList(openDomTargetHistorys, changeTypes.添加类名)
+    // changeDomHistoryList(closeDomTargetHistorys, changeTypes.移除类名) 
+    changeDomTargetActive(activeDomTargetHistoryValue)
+    // TODO 这里可以移除     开启关闭和激活的历史，方便 debug
+    // resetTargetList()
+}
+/**
+ * 
+ * @returns 返回一个闭包
+ */
+var saveToggleTargetHistory = () => {
+    // 1 先获取DOM元素
+    // 2 更新 tags 渲染最新的 dom
+    // 3 抓取当前闭包的数据，重新存储
+    // var closeElements = document.querySelectorAll('.tag__children:not(.tag__children--active)') //  默认未展开下拉的
+    var toggleList =      document.querySelectorAll('.tag__children--active')   //    已经展开下拉的
+    var activeCurrent =   document.querySelector('.tag__parent--active')     //    点击高亮的
+    return {
+        saveElement() {
+            openDomTargetHistorys = []
+
+            for (var el of toggleList) {
+                var targetValue = el
+                            .previousElementSibling // 上一个兄弟组件
+                            .dataset.tagValue  // ！！严格查询，应该有这个标识才是我们希望的
+                if (!targetValue) {
+                    console.error('!出错，查询上一个兄弟dom失败');
+                    return
+                }
+                var element = document.querySelector(`[data-tag-value='${targetValue}`)
+                openDomTargetHistorys.push([targetValue, element, ])
+            }
+        },
+        // 添加为当前点击高亮的 dom 与 标识
+        saveActive() {
+            activeDomTargetHistoryValue = []
+            
+            // 未选中任何需要激活的
+            if (activeCurrent === null) {
+                return
+            }
+
+            console.log("🚀 ~ saveActive ~ activeCurrent:", activeCurrent)
+            var targetValue = activeCurrent
+                                .dataset.tagValue  // ！！严格查询，应该有这个标识才是我们希望的
+            var element = document.querySelector(`[data-tag-value='${targetValue}`)
+            if (targetValue && element) {
+                activeDomTargetHistoryValue = [
+                    [targetValue, element,],
+                ]
+            }
+        },
+        logData() {
+            console.log("🚀 ~ saveElement ~ openDomTargetHistorys:", openDomTargetHistorys)
+            console.log("🚀 ~ saveElement ~ activeDomTargetHistoryValue:", activeDomTargetHistoryValue)
+        }
+    }
+}
+
+
+
+ // 2 个数组 比较是否相等
 const arrEqualChck = (a1, a2) => {
     // 长度判断
     if (a1.length !== a2.length) {
@@ -137,6 +280,8 @@ const historyAutoTest = () => {
 // historyAutoTest()
 
 const treeToggle = (callback,) => {
+    execClassToggle()
+
     const tagParents = document.querySelectorAll('.tag__parent')
     // 清除所有的高亮
     const clearAllParentActive = () => {
@@ -178,6 +323,7 @@ const treeToggle = (callback,) => {
                 clearAllParentActive()
                 // 给当前点击的元素 增加高亮
                 this.classList.add('tag__parent--active')
+                console.log(`高亮当前点击的元素`, this.dataset.tagValue, tagValue)
             }
 
             const activeAndCallback = () => {
@@ -203,7 +349,7 @@ const treeToggle = (callback,) => {
                 if (高亮) {
                     activeAndCallback()
                 }
-                console.log('点击整体的箭头位置');
+                console.log('点击整体的箭头位置', this.dataset.tagValue, tagValue)
             }
 
             console.log('click tagValue', tagValue)
@@ -236,4 +382,5 @@ const treeToggle = (callback,) => {
 
 module.exports = {
     treeToggle,
+    saveToggleTargetHistory,
 }

@@ -7,7 +7,7 @@ import StringToken from './StringToken'
 import './App.css'
 import './treeHtml/tree.css'
 import { createAndAppendDom } from './domUtils'
-import { treeToggle } from './treeHtml/tree'
+import { treeToggle, saveToggleTargetHistory, } from './treeHtml/tree'
 
 import { useLoadingHook, } from './hooks/mainHooks'
 
@@ -177,11 +177,17 @@ const App = () => {
             ...DefaultIList,
             id: 4,
             title: '默认title-4',
+            content: ' #lin1/lin2/lin3/lin4# ',
+        },
+        {
+            ...DefaultIList,
+            id: 5,
+            title: '默认title-5',
             content: ' #tt1# ',
         },
     ]
     // 默认编辑中的
-    const defaultEditor = defaultList[0]
+    const defaultEditor = defaultList[2]
     const [list, setList] = useState<IList[]>(defaultList)
     const [title, setTitle] = useState<string>('呀哈哈')
     const [searchInput, setSearchInput] = useState<string>(defaultEditor.title)
@@ -393,11 +399,25 @@ const App = () => {
         setList(l)
     }
 
+    const createListTagsAndReloadClick = () => {
+        // 保存toggle历史记录
+        console.log('list变化了：', list)
+        const osTarget = saveToggleTargetHistory()
+        renderListTags()
+        osTarget.saveElement()
+        osTarget.saveActive()
+        osTarget.logData()
+        treeToggle((value: string,)=>{
+            console.log('点击的标签是', value);
+        })
+    }
+
     // 监听列表 增 删 改 查 的状态
     useEffect(() => {
-        renderListTags()
-
-        console.log('list变化了：', list)
+        // 测试，自动点击搜索按钮
+        // testAutoClickSearch()
+        // __testModel()
+        createListTagsAndReloadClick()
         return () => {}
     }, [list,])
 
@@ -650,15 +670,12 @@ const App = () => {
     }
     
 
-    useEffect(()=>{
-        // 测试，自动点击搜索按钮
-        // testAutoClickSearch()
-        // __testModel()
-        renderListTags()
-        treeToggle((value: string,)=>{
-            console.log('点击的标签是', value);
-        })
-    }, [])
+    // useEffect(()=>{
+    //     // 测试，自动点击搜索按钮
+    //     // testAutoClickSearch()
+    //     // __testModel()
+    //     createListTagsAndReloadClick()
+    // }, [])
 
     const listTypeFilter = (title: string, filedList: Array<IList>, ): JSX.Element => {
         return (
@@ -672,13 +689,13 @@ const App = () => {
                     let hasEditor = editor?.id === id
                     return (
                         <div key={id}>
-                            <div style={{ border: '1px solid black' }}>
+                            <div style={{ border: '1px solid black' }} onClick={() => { setEditor(item,) }}>
                                 <ButtonWidget onClick={() => { setEditor(item,) }}>编辑</ButtonWidget>
                                 <ButtonWidget onClick={() => { onDelete(id,) }}>池底删除</ButtonWidget>
                                 <ButtonWidget onClick={() => { onToRecycleBin(id,) }}>放到回收站</ButtonWidget>
                                 😄标题: {item.title} 😄
                                 内容: {item.content}
-                                {hasEditor && '当时是编辑中的~'}
+                                {hasEditor && <span style={{ color: 'red' }}>'当时是编辑中的~'</span>}
                             </div>
                         </div>
                     )
@@ -737,16 +754,17 @@ const App = () => {
                 hasEditoring() && (
                     <>
                         <input 
+                            style={{'width': '300px',}}
+                            value={editor!.content || ''}
+                            onChange={(event: DOMEventType['input']) => {
+                                onSetTitle(event, 'content')
+                            }}  
+                        />
+                        <input 
                             // ! 是操作符。它告诉编译器属性已设置（不是 null 或 undefined ），即使TypeScript的分析无法检测到。
                             value={editor!.title} // 这里的 ! 符号表示 肯定不会是 null 因为有函数提前判断了，但是ts不知道， 所以我们只能用特殊语法让ts知道
                             onChange={(event: DOMEventType['input']) => {
                                 onSetTitle(event, 'title')
-                            }}  
-                        />
-                        <input 
-                            value={editor!.content || ''}
-                            onChange={(event: DOMEventType['input']) => {
-                                onSetTitle(event, 'content')
                             }}  
                         />
                     </>
