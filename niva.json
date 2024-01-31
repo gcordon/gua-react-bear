@@ -1,0 +1,11 @@
+{
+  "name": "react-bear",
+  "uuid": "b04bfd36-4846-4170-b501-012bf4dfa1f4",
+  "debug": {
+    "entry": "http://127.0.0.1:3000",
+    "resource": "public"
+  },
+  "build": {
+    "resource": "build"
+  }
+}
