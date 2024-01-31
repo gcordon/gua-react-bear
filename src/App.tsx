@@ -7,10 +7,10 @@ import StringToken from './StringToken'
 import './App.css'
 import './treeHtml/tree.css'
 import { createAndAppendDom } from './domUtils'
-import { treeToggle, saveToggleTargetHistory, } from './treeHtml/tree'
+import { treeToggle, } from './treeHtml/tree'
+import { ClassnamsToggleHistory, } from './treeHtml/historyTree.js'
 
 import { useLoadingHook, } from './hooks/mainHooks'
-
 
 // onInput(event: 用在这里) 
 type DOMEventType = {
@@ -399,15 +399,15 @@ const App = () => {
         setList(l)
     }
 
-    const createListTagsAndReloadClick = () => {
+    const createListTagsAndReloadClick = async () => {
         // 保存toggle历史记录
         console.log('list变化了：', list)
-        const osTarget = saveToggleTargetHistory()
-        renderListTags()
-        osTarget.saveElement()
-        osTarget.saveActive()
-        osTarget.logData()
-        treeToggle((value: string,)=>{
+        let sl = ClassnamsToggleHistory.new()
+        await sl.searchActiveDom()
+        renderListTags() // TODO 这里感觉也可以用 await 语法一下
+        await sl.saveDomHisotrys()
+        await sl.logData()
+        treeToggle((value: string,) => {
             console.log('点击的标签是', value);
         })
     }
@@ -682,7 +682,12 @@ const App = () => {
             <>
                 <h1>{title}</h1>
 
-                <h2>{loadingStatus && '加载中.....'}</h2>
+                <h2>
+                    {
+                        loadingStatus 
+                        && <div className="loader"></div>
+                    }
+                </h2>
                 
                 {!loadingStatus && filedList.map((item) => {
                     let id = item.id
