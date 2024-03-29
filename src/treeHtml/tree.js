@@ -149,9 +149,13 @@ const treeToggle = (callback,) => {
         })
     }
     tagParents.forEach(element => {
-        let 向下捕获 = true
-        // 注意这里不能用箭头函数作为回调，如果是箭头函数的话，指向的就是 Foreach 中的东西的，
-        // 否则，this获取的就是window
+        let 向下捕获 = true // true 为冒泡  false 为捕获     默认不填写的话是 false
+        // 这里如果使用  箭头函数   
+        // 获取到的 this 是离自己最近的函数区域 
+        // 这里如果使用了箭头会拿到最近函数的 this，但是现在这里用的函数都是箭头函数，所以最终会获得 window 
+
+        // 这里如果使用 函数表达式
+        // 这里获取的 this 是 dom 元素本身
         element.addEventListener('click', function(currentClickElement) {
             /**
              // TIP:

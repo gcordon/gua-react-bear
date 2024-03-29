@@ -1,5 +1,16 @@
-import React, { useEffect, useState, CSSProperties, ReactNode, useRef, } from 'react'
+import React, { 
+    useEffect, // https://zh-hans.react.dev/reference/react/useEffect
+    useState,
+    CSSProperties,
+    ReactNode,
+    useRef, 
+    createElement, 
+    useId,
+} from 'react'
 import toast, { Toaster } from 'react-hot-toast'
+
+
+import { ThemeContext } from './theme-context'
 
 import WellToken from './WellToken'
 import StringToken from './StringToken'
@@ -11,6 +22,8 @@ import { treeToggle, } from './treeHtml/tree'
 import { ClassnamsToggleHistory, } from './treeHtml/historyTree.js'
 
 import { useLoadingHook, } from './hooks/mainHooks'
+import { hocLoading } from './hoc/hocLoading'
+import { createPortal } from 'react-dom'
 
 // onInput(event: 用在这里) 
 type DOMEventType = {
@@ -34,9 +47,11 @@ interface ButtonProps extends React.ComponentPropsWithRef<'button'>, ButtonEmbel
 }
 const ButtonDefaultProps = {
     size: ButtonSize.small,
+    __des: '注释',
 }
 // https://react-typescript-cheatsheet.netlify.app/docs/advanced/patterns_by_usecase
-const ButtonWidget = (props: ButtonProps, ): JSX.Element => {
+// 这里加了 typeof 是让更好代码有更好的智能提示
+const ButtonWidget = (props: ButtonProps & typeof ButtonDefaultProps): JSX.Element => {
     const { specialProp, mRef, ...extendAttrbutes } = props
     // 样式
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -44,9 +59,23 @@ const ButtonWidget = (props: ButtonProps, ): JSX.Element => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const size = props.size
     
-    return <button ref={mRef} {...extendAttrbutes}/>
+    return <button  ref={mRef} {...extendAttrbutes}/>
 }
 ButtonWidget.defaultProps = ButtonDefaultProps
+
+https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/default_props
+type PermissionsButtonWidgetProps<T> = T extends
+    | React.ComponentType<infer P>
+    | React.Component<infer P>
+    ? React.JSX.LibraryManagedAttributes<T, P>
+    : never;
+const PermissionsButtonWidget = (props: PermissionsButtonWidgetProps<typeof ButtonWidget>) => {
+    // typeof 继承，并且让有提示
+    console.log('调试===', props.size)
+    return <button style={{ color: 'blue',}}>
+        按钮{props.size}
+    </button>
+}
 
 
 // 列表渲染
@@ -83,6 +112,35 @@ const ListWidgetModel = <T,>(props: ListWidgetProps<T>): JSX.Element => {
 }
 
 
+
+interface TimeProps { // 修饰
+    renderContent: any,
+}
+const GetCurrentTime = (props: TimeProps, ): JSX.Element => {
+    return (
+        <div>
+            {props.renderContent('2024-2-1!!快过年了')}
+        </div>
+    )
+}
+const CurstomTimeStyle = (time: number) => {
+    return <span style={{color: 'red'}}>{time}</span>
+}
+const ShowCurrentTime = () => {
+    return <>
+        <GetCurrentTime 
+            renderContent={(time: number) => {
+                return CurstomTimeStyle(time)
+            }}
+        />
+        <GetCurrentTime 
+            renderContent={(time: number) => {
+                return <span style={{color: 'blue'}}>{time}...</span>
+            }}
+        />
+    </>
+}
+
  // 获取 dom event value
  const getInputValue = (event: DOMEventType['input']) => {
     const target: HTMLInputElement = event.target
@@ -111,7 +169,6 @@ const sleepTool = (time: number, status: sleepSatus,): sleepReturn => {
 }
 
 
-
 const App = () => {
     // 类型校验
     interface IList {
@@ -133,7 +190,7 @@ const App = () => {
         test: boolean,
     }
     // Pick == 选择，这里筛选了是否已删除的字段
-    const DefaultIList: Pick<IList, 'deleted' | 'tags' | 'test'> = {
+    const DefaultIList: Pick<IList, 'deleted' | 'tags' | 'test'> = { // https://typescript.xiniushu.com/zh/reference/utility-types.html
         deleted: false,
         tags: [],
         test: false,
@@ -269,6 +326,7 @@ const App = () => {
             let c = a.includes(b)
             return c
         })
+
         let sl = sleepTool(500, sleepSatus.success)
         loadingFetch(sl)
         await sl
@@ -676,20 +734,22 @@ const App = () => {
     //     // __testModel()
     //     createListTagsAndReloadClick()
     // }, [])
-
-    const listTypeFilter = (title: string, filedList: Array<IList>, ): JSX.Element => {
+    interface asj {
+        title: string, 
+        filedList: Array<IList>, 
+    }
+    const listTypeFilter = (filterProps: asj): JSX.Element => {
         return (
             <>
-                <h1>{title}</h1>
-
-                <h2>
+                {/* <h2>
                     {
                         loadingStatus 
                         && <div className="loader"></div>
                     }
-                </h2>
+                </h2> */}
+                <h1>{filterProps.title}</h1>
                 
-                {!loadingStatus && filedList.map((item) => {
+                {!loadingStatus && filterProps.filedList.map((item) => {
                     let id = item.id
                     let hasEditor = editor?.id === id
                     return (
@@ -701,6 +761,9 @@ const App = () => {
                                 😄标题: {item.title} 😄
                                 内容: {item.content}
                                 {hasEditor && <span style={{ color: 'red' }}>'当时是编辑中的~'</span>}
+                                <PermissionsButtonWidget
+                                    size={ButtonSize.large2}
+                                ></PermissionsButtonWidget>
                             </div>
                         </div>
                     )
@@ -709,9 +772,40 @@ const App = () => {
         )
     }
 
+    const useHocLoading = hocLoading(listTypeFilter, () => {
+        return <span>所有笔记</span>
+    },)
 
+
+    const updateTipText = (text: string,) => {
+        // https://react.dev/reference/react/createElement
+        return createElement( // 生成一个 jsx
+            'p', // type
+            {className: 'update__tip__text'}, // props
+            text, // children 1
+            createElement('span', null, '!!'), // children 2
+            '..!', // children 3 
+        )
+    }
+
+    console.log('调试===useId', useId())
+
+    const { theme, toggle, dark } = React.useContext(ThemeContext)
+    
     return (
         <div className='app'>
+            {
+                // https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/portals
+                // https://refine.dev/blog/react-createportal/#use-cases-of-the-createportal-api
+                // 嵌套到dom外，主要用于dialog相关的使用
+                createPortal(
+                    <div style={{display: 'none'}}>dialog modle</div>,
+                    document.body,
+                )
+            }
+             <div style={{ backgroundColor: theme.backgroundColor, color: theme.color, }} onClick={toggle}>
+                当前主题： dart ? {dark ? '是' : '否'} 点我切换主题
+            </div>
             <ButtonWidget onClick={() => { window.location.reload() }}>刷新页面</ButtonWidget>
 
             {/* 添加 */}
@@ -724,6 +818,7 @@ const App = () => {
 
             {/*  搜索    */}
             <h1>搜索</h1>
+            <ShowCurrentTime></ShowCurrentTime>
             <div>
                 <input onInput={onSearchInput} data-hot="1" value={searchInput}/>
                 <ButtonWidget size={ButtonSize.default} mRef={searchButtonRef} onClick={onSearchButton} >
@@ -750,15 +845,55 @@ const App = () => {
                 )
             })} */}
 
-            {listTypeFilter('回收站', list.filter(e => e.deleted === true), )}
-            {listTypeFilter('所有笔记', list.filter(e => e.deleted === false), )}
+            {/* {listTypeFilter({title: '回收站', filedList: list.filter(e => e.deleted === true), })} */}
+            {/* {listTypeFilter({title: '所有笔记', filedList: list.filter(e => e.deleted === false), })} */}
+
+            {/* 高阶函数使用 */}
+            {/* 写法1 创建变量并且使用hoc函数后使用 */}
+            {   
+                useHocLoading
+                (
+                    loadingStatus, 
+                    {
+                        title: '所有笔记',
+                        filedList: list.filter(e => e.deleted === false),
+                    }, 
+                )
+            }
+            {/* 写法2 直接使用hoc函数使用 */}
+            {   
+                hocLoading(listTypeFilter, () => {
+                    return <span>回收站</span>
+                },)
+                (
+                    loadingStatus, 
+                    {
+                        title: '回收站',
+                        filedList: list.filter(e => e.deleted === true),
+                    }, 
+                )
+            }
+
+            
 
             {/* 编辑中的 */}
-            <h1>编辑中的</h1>
+            <h1>{ updateTipText(`编辑中的`) }</h1>
             {
                 hasEditoring() && (
                     <>
-                        <input 
+                    <div 
+                        placeholder=" "
+                        className="notranslate" 
+                        spellCheck="true" // 启用了拼写检查
+                        contentEditable="true" // 可以被用户直接编辑，就像一个文本框一样。
+                        style={{
+                            border: "2px solid black",
+                            padding: "10px 20px",
+                        }}
+                    >
+                        123
+                    </div>
+                        <input
                             style={{'width': '300px',}}
                             value={editor!.content || ''}
                             onChange={(event: DOMEventType['input']) => {
