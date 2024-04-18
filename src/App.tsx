@@ -91,12 +91,6 @@ interface ListWidgetProps<T> {
 const ListWidgetModel = <T,>(props: ListWidgetProps<T>): JSX.Element => {
     const ps:ListWidgetProps<T> = props
     const [state, setState] = useState<T[]>([])
-
-    useEffect(() => {
-        console.log('复制当前数据 state =', state)
-        return () => {}
-    }, [state,])
-
     return (
         <>
             <h1>列表</h1>
@@ -193,7 +187,7 @@ const App = () => {
     const DefaultIList: Pick<IList, 'deleted' | 'tags' | 'test'> = { // https://typescript.xiniushu.com/zh/reference/utility-types.html
         deleted: false,
         tags: [],
-        test: false,
+        test: false, // 如果是true的，表示是测试，是用于标签html的东西
     }
     // 默认值， 用于调试
     const defaultList: Array<IList> = [
@@ -547,7 +541,7 @@ const App = () => {
                 ${createChildrenDomElement()}
             `)
 
-            // 生成的html dom -》 参考 tree/tree.html文件
+            // 生成的html dom -》 参考 tree/tree.html 文件
             return allHtml
         }
         // 生成侧边栏
@@ -633,9 +627,9 @@ const App = () => {
                     let preIsEmpty = well.isEmpty(pre)
                     
                     if (preIsEmpty && current && !nextIsEmpty) {
-                        console.log('成功1')
+                        console.log('双数检测到(0开始) # 号 成功1')
                         let index = token.stepIndex(-1)
-                        well.wellIndexs.push(index)
+                        well.wellIndexs.push(index) // TODO 这里不应该暴露出来，应该让类暴露一个函数进行操作
                     }
                 } else if (well.is单数Well()) {
                     // // ’a# ‘ 当前查询到#号，前一个字符必须不空格，第二字符是#号，第三个字符必须是空格
@@ -646,9 +640,9 @@ const App = () => {
                     let preIsEmpty = well.isEmpty(pre)
                     
                     if (!preIsEmpty && current && nextIsEmpty) {
-                        console.log('成功2')
+                        console.log('单数检测到(1开始) # 号 成功2')
                         let index = token.peekIndex()
-                        well.wellIndexs.push(index)
+                        well.wellIndexs.push(index) // TODO 这里不应该暴露出来，应该让类暴露一个函数进行操作
 
                         console.log("🚀 ~ App ~ well.wellIndexs:", well.wellIndexs)
                         let w = well.wellIndexs
@@ -703,7 +697,7 @@ const App = () => {
     const renderListTags = () => {
         // let arr = cloneList()
         let arr = list
-        const filter = arr.filter(v => !v.test)
+        const filter = arr.filter(v => !v.test) // 返回新数组、浅拷贝、后续的修改不会修改到拷贝前的元素
         filter.map(e => {
             e.tags = 根据内容生成标签二维数组(e.content)
             return e

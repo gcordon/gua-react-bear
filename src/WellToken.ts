@@ -6,6 +6,7 @@ class WellToken {
         this.wellIndexs = [
             // 1, 5      //  存的值为数字下标 index   这里的 1 表示#号开始 5 表示#号结束
         ]
+        // 标签内容字符串
         this.wellTags = []
     }
     static new() {
